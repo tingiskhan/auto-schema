@@ -1,7 +1,8 @@
 import unittest
 from datetime import date
-from auto_schema import AutoMarshmallowSchema
+from auto_schema import AutoMarshmallowSchema, deserialize_instances
 from test.model import Task, TaskWithRelationShip, TaskType, Attachment
+
 
 
 class SchemaTests(unittest.TestCase):
@@ -44,10 +45,7 @@ class SchemaTests(unittest.TestCase):
 
         attachment = Attachment(id=1, task_id=1, location="Here")
 
-        today = date.today()
-        enum = TaskType.Task
-
-        task_with_relationship = TaskWithRelationShip(id=1, name="Test", finished_by=today, type=enum)
+        task_with_relationship = TaskWithRelationShip(id=1, name="Test", finished_by=date.today(), type=TaskType.Task)
         task_with_relationship.attachments = [attachment]
 
         expected = {
@@ -68,6 +66,28 @@ class SchemaTests(unittest.TestCase):
         loaded = schema().load(dumped)
 
         self.assertEqual(expected, loaded)
+
+    def verify_objects(self, expected, received):
+        for k, v in vars(task_with_relationship).items():
+            if k.startswith("_"):
+                continue
+
+            if not isinstance(v, list):
+                self.assertEqual(v, getattr(loaded, k))
+                continue
+
+    def test_SchemaLoadInstance(self):
+        schema = AutoMarshmallowSchema.generate_schema(TaskWithRelationShip)()
+
+        attachment = Attachment(id=1, task_id=1, location="Here")
+
+        task_with_relationship = TaskWithRelationShip(id=1, name="Test", finished_by=date.today(), type=TaskType.Task)
+        task_with_relationship.attachments = [attachment]
+
+        dumped = schema.dump(task_with_relationship)
+
+        loaded = deserialize_instances(schema, dumped)
+        self.verify_objects(task_with_relationship, loaded)
 
 
 if __name__ == '__main__':
