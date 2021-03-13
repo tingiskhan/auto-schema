@@ -35,3 +35,10 @@ dumped_task = TaskSchema().dump(task)
 print(dumped_task)
 ```
 
+## Requirements
+The library requires the following packages
+
+* `SQLAlchemy`
+* `marshmallow`
+* `marshmallow-enum`
+* `marshmallow-sqlalchemy`
