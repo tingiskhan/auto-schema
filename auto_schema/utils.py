@@ -1,10 +1,5 @@
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.properties import ColumnProperty
-from sqlalchemy.orm.relationships import RelationshipProperty
-from typing import Type, Sequence, TypeVar
-from marshmallow_sqlalchemy.schema import SQLAlchemyAutoSchema
-
-T = TypeVar("T")
 
 
 def get_columns_of_object(base, prop_type=ColumnProperty):
@@ -27,35 +22,8 @@ def check_column_is_nullable(column: InstrumentedAttribute):
     return column.property.columns[-1].nullable
 
 
-def _add_relationships(relation_column, data):
+def add_relationships(relation_column, data):
     if isinstance(data, dict):
         return relation_column.property.mapper.class_(**data)
 
     return [relation_column.property.mapper.class_(**p) for p in data]
-
-
-def deserialize_instances(schema: SQLAlchemyAutoSchema, objects: T, **kwargs) -> T:
-    relation_columns = get_columns_of_object(schema.Meta.model, RelationshipProperty)
-    deserialized = schema.load(objects, **kwargs)
-
-    is_list = True
-    if isinstance(deserialized, dict):
-        deserialized = [deserialized]
-        is_list = False
-
-    res = list()
-    for r in deserialized:
-        rels = dict()
-        for relation_column in relation_columns:
-            popped = r.pop(relation_column.key)
-            rels[relation_column.key] = _add_relationships(relation_column, popped)
-
-        r.update(rels)
-        obj = schema.Meta.model(**r)
-
-        res.append(obj)
-
-    if is_list:
-        return res
-
-    return res[0]

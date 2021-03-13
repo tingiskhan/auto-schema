@@ -1,6 +1,6 @@
 import unittest
 from datetime import date
-from auto_schema import AutoMarshmallowSchema, deserialize_instances
+from auto_schema import AutoMarshmallowSchema
 from test.model import Task, TaskWithRelationShip, TaskType, Attachment
 
 
@@ -68,13 +68,15 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(expected, loaded)
 
     def verify_objects(self, expected, received):
-        for k, v in vars(task_with_relationship).items():
+        for k, v in vars(expected).items():
             if k.startswith("_"):
                 continue
 
+            r_val = getattr(received, k)
             if not isinstance(v, list):
-                self.assertEqual(v, getattr(loaded, k))
-                continue
+                self.assertEqual(v, r_val)
+            else:
+                self.verify_objects(v, r_val)
 
     def test_SchemaLoadInstance(self):
         schema = AutoMarshmallowSchema.generate_schema(TaskWithRelationShip)()
@@ -86,7 +88,7 @@ class SchemaTests(unittest.TestCase):
 
         dumped = schema.dump(task_with_relationship)
 
-        loaded = deserialize_instances(schema, dumped)
+        loaded = schema.deserialize_instances(dumped)
         self.verify_objects(task_with_relationship, loaded)
 
 
