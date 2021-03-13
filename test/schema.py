@@ -88,7 +88,7 @@ class SchemaTests(unittest.TestCase):
 
         dumped = schema.dump(task_with_relationship)
 
-        loaded = schema.deserialize_instances(dumped)
+        loaded = schema.load_instance(dumped)
         self.verify_objects(task_with_relationship, loaded)
 
 

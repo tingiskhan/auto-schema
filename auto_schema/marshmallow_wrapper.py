@@ -73,8 +73,8 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
 
         return res
 
-    def deserialize_instances(self, objects: T, **kwargs) -> T:
-        relation_columns = get_columns_of_object(self.Meta.model, RelationshipProperty)
+    def load_instance(self, objects: T, **kwargs) -> T:
+        relation_columns = tuple(get_columns_of_object(self.Meta.model, RelationshipProperty))
         deserialized = self.load(objects, **kwargs)
 
         is_list = True
