@@ -57,8 +57,8 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
 
             state_dict[relship.key] = f.Nested(rel_schema, many=relship.property.uselist)
 
-            cls._create_key_as_type(cls.LOAD_ONLY_FIELDS.lower(), state_dict, list)
-            state_dict[cls.LOAD_ONLY_FIELDS.lower()] += [relship.key]
+            cls._create_key_as_type(cls.LOAD_ONLY_FIELDS, state_dict, list)
+            state_dict[cls.LOAD_ONLY_FIELDS] += [relship.key]
 
     @classmethod
     def get_schema(cls, obj: Type):
