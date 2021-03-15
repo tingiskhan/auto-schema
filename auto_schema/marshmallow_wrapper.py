@@ -86,7 +86,10 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
         for r in deserialized:
             rels = dict()
             for relation_column in relation_columns:
-                popped = r.pop(relation_column.key)
+                popped = r.pop(relation_column.key, None)
+                if popped is None:
+                    continue
+
                 rels[relation_column.key] = add_relationships(relation_column, popped)
 
             r.update(rels)

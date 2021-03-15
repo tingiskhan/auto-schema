@@ -4,7 +4,6 @@ from auto_schema import AutoMarshmallowSchema
 from test.model import Task, TaskWithRelationShip, TaskType, Attachment
 
 
-
 class SchemaTests(unittest.TestCase):
     def test_GenerateSchema(self):
         schema = AutoMarshmallowSchema.generate_schema(Task)
@@ -85,6 +84,16 @@ class SchemaTests(unittest.TestCase):
 
         task_with_relationship = TaskWithRelationShip(id=1, name="Test", finished_by=date.today(), type=TaskType.Task)
         task_with_relationship.attachments = [attachment]
+
+        dumped = schema.dump(task_with_relationship)
+
+        loaded = schema.load_instance(dumped)
+        self.verify_objects(task_with_relationship, loaded)
+
+    def test_SchemaWithRelationshipNoData(self):
+        schema = AutoMarshmallowSchema.generate_schema(TaskWithRelationShip)()
+
+        task_with_relationship = TaskWithRelationShip(id=1, name="Test", finished_by=date.today(), type=TaskType.Task)
 
         dumped = schema.dump(task_with_relationship)
 
