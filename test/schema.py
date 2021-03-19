@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 from auto_schema import AutoMarshmallowSchema
-from test.model import Task, TaskWithRelationShip, TaskType, Attachment
+from test.model import Task, TaskWithRelationShip, TaskType, Attachment, User, Address, HousePicture, Base
 
 
 class SchemaTests(unittest.TestCase):
@@ -72,7 +72,7 @@ class SchemaTests(unittest.TestCase):
                 continue
 
             r_val = getattr(received, k)
-            if not isinstance(v, list):
+            if not isinstance(v, (Base, tuple, list)):
                 self.assertEqual(v, r_val)
             else:
                 self.verify_objects(v, r_val)
@@ -99,6 +99,21 @@ class SchemaTests(unittest.TestCase):
 
         loaded = schema.load_instance(dumped)
         self.verify_objects(task_with_relationship, loaded)
+
+    def test_NestedStructure(self):
+        schema = AutoMarshmallowSchema.generate_schema(User)()
+
+        user = User(id=1, name="Testing 123")
+        address = Address(id=1, user_id=user.id, value="Testing street 1")
+        house_picture = HousePicture(id=1, address_id=address.id, location="C:/test")
+
+        address.house_pictures = [house_picture]
+        user.address = address
+
+        dumped = schema.dump(user)
+
+        loaded = schema.load_instance(dumped)
+        self.verify_objects(user, loaded)
 
 
 if __name__ == '__main__':

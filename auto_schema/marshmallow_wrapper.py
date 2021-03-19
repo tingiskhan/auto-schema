@@ -6,7 +6,7 @@ from typing import Type, Dict, Any, TypeVar
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm.relationships import RelationshipProperty
 from marshmallow import fields as f
-from .utils import find_col_types, get_columns_of_object, add_relationships
+from .utils import find_col_types, get_columns_of_property_type, map_model
 from .field_generator import EnumFieldGenerator, BytesFieldGenerator
 
 
@@ -43,7 +43,7 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
 
     @classmethod
     def _handle_label_fields(cls, base_class: Type[DeclarativeMeta], state_dict: Dict[str, Any]):
-        for column in get_columns_of_object(base_class):
+        for column in get_columns_of_property_type(base_class):
             if not isinstance(column.property.expression, Label):
                 continue
 
@@ -52,7 +52,7 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
 
     @classmethod
     def _handle_relationships(cls, base_class: Type[DeclarativeMeta], state_dict: Dict[str, Any]):
-        for relship in get_columns_of_object(base_class, RelationshipProperty):
+        for relship in get_columns_of_property_type(base_class, RelationshipProperty):
             rel_schema = AutoMarshmallowSchema.generate_schema(relship.property.mapper.class_)
 
             state_dict[relship.key] = f.Nested(rel_schema, many=relship.property.uselist)
@@ -74,7 +74,7 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
         return res
 
     def load_instance(self, objects: T, **kwargs) -> T:
-        relation_columns = tuple(get_columns_of_object(self.Meta.model, RelationshipProperty))
+        relation_columns = get_columns_of_property_type(self.Meta.model, RelationshipProperty)
         deserialized = self.load(objects, **kwargs)
 
         is_list = True
@@ -82,20 +82,7 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
             deserialized = [deserialized]
             is_list = False
 
-        res = list()
-        for r in deserialized:
-            rels = dict()
-            for relation_column in relation_columns:
-                popped = r.pop(relation_column.key, None)
-                if popped is None:
-                    continue
-
-                rels[relation_column.key] = add_relationships(relation_column, popped)
-
-            r.update(rels)
-            obj = self.Meta.model(**r)
-
-            res.append(obj)
+        res = [map_model(relation_columns, obj) for obj in deserialized]
 
         if is_list:
             return res
