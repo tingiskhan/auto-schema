@@ -46,7 +46,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
 
-    address = relationship("Address", uselist=False)
+    address = relationship("Address")
 
 
 class Address(Base):

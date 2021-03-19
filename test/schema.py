@@ -108,7 +108,7 @@ class SchemaTests(unittest.TestCase):
         house_picture = HousePicture(id=1, address_id=address.id, location="C:/test")
 
         address.house_pictures = [house_picture]
-        user.address = address
+        user.address = [address]
 
         dumped = schema.dump(user)
 
