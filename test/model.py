@@ -38,3 +38,31 @@ class Attachment(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     task_id = Column(Integer, ForeignKey(TaskWithRelationShip.id), nullable=False)
     location = Column(String, nullable=False)
+
+
+class User(Base):
+    __tablename__ = "user"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+
+    address = relationship("Address", uselist=False)
+
+
+class Address(Base):
+    __tablename__ = "address"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    value = Column(String, nullable=False)
+
+    house_pictures = relationship("HousePicture")
+
+
+class HousePicture(Base):
+    __tablename__ = "house_picture"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    address_id = Column(Integer, ForeignKey(Address.id), nullable=False)
+    location = Column(String, nullable=False)
+
