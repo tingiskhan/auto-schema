@@ -2,11 +2,11 @@ from sqlalchemy import Enum, LargeBinary
 from sqlalchemy.sql.elements import Label
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from functools import lru_cache
-from typing import Type, Dict, Any, TypeVar
+from typing import Type, Dict, Any, TypeVar, List, Union
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm.relationships import RelationshipProperty
 from marshmallow import fields as f
-from .utils import find_col_types, get_columns_of_property_type, map_model
+from .utils import find_col_types, get_columns_of_property_type
 from .field_generator import EnumFieldGenerator, BytesFieldGenerator
 
 
@@ -73,18 +73,43 @@ class AutoMarshmallowSchema(SQLAlchemyAutoSchema):
 
         return res
 
+    def _load_model(self, base_class, relation_columns: List[RelationshipProperty], data: Union[Dict[str, Any], List[Dict[str, Any]]]):
+        is_list = not isinstance(data, dict)
+        if not is_list:
+            data = [data]
+
+        for d in data:
+            for relation_column in relation_columns:
+                key = relation_column.key
+                popped = d.pop(key, None)
+
+                if popped is None or not any(popped):
+                    continue
+
+                mapped_class = relation_column.property.mapper.class_
+                rel_columns = get_columns_of_property_type(mapped_class, prop_type=RelationshipProperty)
+
+                if not any(rel_columns):
+                    temp = {
+                        key: mapped_class(**popped)
+                        if isinstance(popped, dict) else [mapped_class(**p) for p in popped]
+                    }
+                else:
+                    temp = {key: self._load_model(mapped_class, rel_columns, popped)}
+
+                d.update(temp)
+
+        res = [base_class(**d) for d in data]
+        return res[0] if not is_list else res
+
     def load_instance(self, objects: T, **kwargs) -> T:
         relation_columns = get_columns_of_property_type(self.Meta.model, RelationshipProperty)
         deserialized = self.load(objects, **kwargs)
 
-        is_list = True
-        if isinstance(deserialized, dict):
+        is_list = not isinstance(deserialized, dict)
+        if not is_list:
             deserialized = [deserialized]
-            is_list = False
 
-        res = [map_model(relation_columns, obj) for obj in deserialized]
+        res = [self._load_model(self.Meta.model, relation_columns, obj) for obj in deserialized]
 
-        if is_list:
-            return res
-
-        return res[0]
+        return res[0] if not is_list else res

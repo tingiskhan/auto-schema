@@ -25,6 +25,15 @@ class SchemaTests(unittest.TestCase):
 
         self.assertEqual(dumped_task, expected)
 
+    def test_LoadInstanceNoRelation(self):
+        schema = AutoMarshmallowSchema.generate_schema(Task)()
+
+        task = Task(id=1, name="Test", finished_by=date.today(), type=TaskType.Task)
+        dumped_task = schema.dump(task)
+
+        loaded = schema.load_instance(dumped_task)
+        self.verify_objects(task, loaded)
+
     def test_LoadModel(self):
         schema = AutoMarshmallowSchema.generate_schema(Task)
 
